@@ -1,0 +1,37 @@
+<meta charset="utf-8" />
+<script src="/tester.js"></script>
+<script src="../node_modules/jinkela/umd.js"></script>
+<script src="../index.js"></script>
+<script>
+addEventListener('load', () => {
+
+  let forest = new Forest({
+    options: [
+      { id: 1, text: 'item 1' },
+      { id: 2, parentId: 1, text: 'item 2' },
+      { id: 3, parentId: 1, text: 'item 3' },
+      { id: 4, parentId: 2, text: 'item 4' },
+      { id: 5, parentId: 2, text: 'item 5' },
+      { id: 6, parentId: 3, text: 'item 6' },
+      { id: 7, parentId: 3, text: 'item 7' },
+      { id: 8, text: 'item 8' },
+      { id: 9, parentId: 8, text: 'item 9' },
+      { id: 10, parentId: 8, text: 'item 10' },
+      { id: 11, parentId: 9, text: 'item 11' },
+      { id: 12, parentId: 9, text: 'item 12' },
+      { id: 13, parentId: 10, text: 'item 13' },
+      { id: 14, parentId: 10, text: 'item 14' }
+    ],
+    defaultValue: [ 1, 8 ]
+  }).to(document.body);
+
+  // Assert UI
+  forest.element.querySelector('input').dispatchEvent(new Event('focus'));
+  let actives = document.querySelectorAll('li.active');
+  Tester.assert(actives[0].textContent === 'item 1');
+  Tester.assert(actives[1].textContent === 'item 8');
+
+  Tester.feedback(true);
+
+});
+</script>
