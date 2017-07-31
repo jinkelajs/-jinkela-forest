@@ -428,9 +428,9 @@
       if (!(value instanceof Array)) value = [];
       this.$hasValue = true;
       this.$value = value;
+      delete this.fullValue;
       this.selectedList.update();
       this.panel.update();
-      delete this.fullValue;
     }
 
     get value() { return this.$value; }
