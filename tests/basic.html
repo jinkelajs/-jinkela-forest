@@ -25,7 +25,7 @@ addEventListener('load', () => {
   }).to(document.body);
 
   // Focus
-  forest.element.querySelector('input').dispatchEvent(new Event('focus'));
+  forest.element.firstChild.dispatchEvent(new Event('click'));
   Tester.assert(document.querySelector('ul'));
 
   // Select Item
@@ -40,7 +40,7 @@ addEventListener('load', () => {
   Tester.assert(document.querySelector('ul') === null);
 
   // Focus again
-  forest.element.querySelector('input').dispatchEvent(new Event('focus'));
+  forest.element.firstChild.dispatchEvent(new Event('click'));
   Tester.assert(document.querySelector('ul'));
 
   // Select a sub-item

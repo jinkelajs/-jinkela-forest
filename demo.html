@@ -1,11 +1,9 @@
-<meta charset="utf-8" />
-<script src="/tester.js"></script>
-<script src="../node_modules/jinkela/umd.js"></script>
-<script src="../index.js"></script>
+<script src="https://unpkg.com/jinkela@1.2.19/umd.js"></script>
+<script src="index.js"></script>
 <script>
-addEventListener('load', () => {
+addEventListener('DOMContentLoaded', () => {
 
-  let forest = new Forest({
+  new Forest({
     options: [
       { id: 1, text: 'item 1' },
       { id: 2, parentId: 1, text: 'item 2' },
@@ -21,20 +19,8 @@ addEventListener('load', () => {
       { id: 12, parentId: 9, text: 'item 12' },
       { id: 13, parentId: 10, text: 'item 13' },
       { id: 14, parentId: 10, text: 'item 14' }
-    ],
-    readonly: true
+    ]
   }).to(document.body);
-
-  // Try to focus but failfured
-  forest.element.firstChild.dispatchEvent(new Event('click'));
-  Tester.assert(document.querySelector('ul') === null);
-
-  // The disabled attribute must be set on INPUT now
-  Tester.assert(forest.element.firstElementChild.classList.contains('disabled'));
-
-  forest.value = [ 1, 2, 3 ];
-
-  Tester.feedback(true);
 
 });
 </script>

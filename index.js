@@ -62,7 +62,7 @@
       return `
         :scope {
           font-size: 14px;
-          padding: 8px 30px 8px 25px;
+          padding: 8px 30px 8px 32px;
           position: relative;
           white-space: nowrap;
           overflow: hidden;
@@ -74,7 +74,7 @@
           cursor: pointer;
           background-image: url("${INACTIVE_ICON}");
           background-repeat: no-repeat;
-          background-position: 5px center;
+          background-position: 8px center;
           &.hover, &:hover { background-color: #e4e8f1; }
           &.weak-active { background-image: url("${WEAK_ACTIVE_ICON}"); }
           &.active { background-image: url("${ACTIVE_ICON}"); }
@@ -115,11 +115,10 @@
     }
 
     hover(event) {
+      event.stopPropagation();
       let { options } = event.detail;
-
       this.clearHoverItem();
       event.detail.element.classList.add('hover');
-
       while (this.element.nextSibling) this.element.nextSibling.remove();
       if (options) ForestMenu.create(options, this.forest).to(this.element.parentNode);
     }
@@ -165,28 +164,24 @@
       this.element.jinkela = this;
       this.element.addEventListener('click', event => this.click(event));
       this.element.classList.add(PANEL_CLASS_NAME);
-      this.update();
-    }
-
-    update() {
       let { options } = this.forest;
       while (this.element.firstChild) this.element.firstChild.remove();
       ForestMenu.create(options, this.forest).to(this);
+    }
+
+    update() {
+      for (let i = this.element.firstElementChild; i; i = i.nextElementSibling) if (i.jinkela) i.jinkela.update();
+      this.updatePosition();
     }
 
     click(event) {
       let { jinkela } = event.target;
       if (!jinkela) return;
       let { id } = jinkela;
-      if (this.forest.value.includes(id)) {
-        this.forest.value = this.forest.value.filter(i => i !== id);
-      } else {
-        this.forest.value = this.forest.value.concat(id);
-      }
-      for (let i = this.element.firstElementChild; i; i = i.nextElementSibling) if (i.jinkela) i.jinkela.update();
+      this.forest.toggle(id);
     }
 
-    show() {
+    updatePosition() {
       let rect = this.forest.element.getBoundingClientRect();
       let clientHeight = document.body.clientHeight;
       if (clientHeight / 2 > rect.top + rect.height / 2) {
@@ -197,7 +192,11 @@
         this.element.style.bottom = clientHeight - rect.top + 5;
       }
       this.element.style.left = rect.left;
-      document.body.appendChild(this.element);
+    }
+
+    show() {
+      this.updatePosition();
+      if (this.element.parentNode !== document.body) document.body.appendChild(this.element);
     }
 
     hide() {
@@ -231,6 +230,149 @@
 
   }
 
+  class ForestSelectedItem extends Jinkela {
+
+    remove() {
+      this.element.animate([ { transform: 'scale(1)' }, { transform: 'scale(.01)' } ], { duration: 200, easing: 'ease' })
+        .addEventListener('finish', () => this.element.remove());
+    }
+
+    dispatchRemoveEvent() {
+      let event = new CustomEvent('remove', { bubbles: true, detail: this });
+      this.element.dispatchEvent(event);
+    }
+
+    get template() {
+      return `
+        <span>
+          <span>{text}</span>
+          <svg on-click="{dispatchRemoveEvent}" viewBox="0 0 18 18">
+            <path d="M 4 4 L 14 14 M 4 14 L 14 4 Z" />
+          </svg>
+        </span>
+      `;
+    }
+
+    get styleSheet() {
+      return `
+        @keyframes ${PANEL_CLASS_NAME}_show {
+          from { transform: scale(0.01); }
+          to { transform: scale(1); }
+        }
+        :scope {
+          box-sizing: border-box;
+          border: 1px solid transparent;
+          background-color: rgba(32,160,255,.1);
+          border-color: rgba(32,160,255,.2);
+          color: #20a0ff;
+          stroke: currentColor;
+          border-radius: 4px;
+          padding: 5px;
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+          justify-content: center;
+          margin: 2px 3px;
+          align-items: center;
+          display: inline-flex;
+          -webkit-box-pack: center;
+          -webkit-box-align: center;
+          animation: 200ms ease ${PANEL_CLASS_NAME}_show;
+          > svg {
+            width: 12px;
+            height: 12px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 100%;
+            margin-left: 4px;
+            &:hover {
+              background: currentColor;
+              border-color: #fff;
+              stroke: #fff;
+            }
+          }
+        }
+        .disabled :scope {
+          filter: saturate(0);
+          animation: unset;
+          > svg { display: none; }
+        }
+      `;
+    }
+
+  }
+
+  class ForestSelectedList extends Jinkela {
+
+    init() {
+      this.element.addEventListener('remove', event => this.remove(event));
+      this.element.addEventListener('click', () => this.click());
+      this.element.style.setProperty('--placeholder', JSON.stringify(this.forest.placeholder));
+      this.list = [];
+      if (this.forest.readonly) this.element.classList.add('disabled');
+    }
+
+    click() {
+      if (this.forest.readonly) return;
+      this.forest.panel.show();
+    }
+
+    remove(event) {
+      event.stopPropagation();
+      this.forest.toggle(event.detail.id);
+    }
+
+    clear() {
+      while (this.element.firstChild) this.element.firstChild.remove();
+    }
+
+    update() {
+      let data = this.forest.value.map(id => this.forest.indexForId[id]).filter(Boolean);
+      let { list } = this;
+      for (let i = 0; i < data.length; i++) {
+        if (list[i]) {
+          if (list[i].id !== data[i].id) list.splice(i--, 1).forEach(item => item.remove());
+        } else {
+          list.push(new ForestSelectedItem(data[i]).to(this));
+        }
+      }
+      list.splice(data.length).forEach(item => item.remove());
+    }
+
+    get styleSheet() {
+      return `
+        :scope {
+          &:empty::before {
+            content: var(--placeholder);
+            color: #757575;
+            line-height: 24px;
+            display: inline-block;
+            margin: 2px 4px;
+          }
+          border-radius: 4px;
+          box-sizing: border-box;
+          min-height: 36px;
+          width: 222px;
+          padding: 3px 3px;
+          border: 1px solid #bfcbd9;
+          &:hover {
+            border-color: #8391a5;
+          }
+          &.disabled {
+            background-color: #eff2f7;
+            border-color: #d3dce6;
+            color: #bbb;
+            cursor: not-allowed;
+            &:hover {
+              border-color: #d3dce6;
+            }
+          }
+        }
+      `;
+    }
+
+  }
+
   class Forest extends Jinkela {
 
     beforeParse(params) {
@@ -253,36 +395,42 @@
     }
 
     init() {
-      if (this.readonly) this.input.setAttribute('disabled', 'disabled');
-      this.panel = null;
       if (!this.$hasValue) this.value = void 0;
+      this.selectedList.to(this);
+    }
+
+    get panel() {
+      let value = new ForestPanel({ forest: this });
+      Object.defineProperty(this, 'panel', { configurable: true, value });
+      return value;
+    }
+
+    get selectedList() {
+      let value = new ForestSelectedList({ forest: this });
+      Object.defineProperty(this, 'selectedList', { configurable: true, value });
+      return value;
     }
 
     focus() {
       if (this.readonly) return;
-      if (!this.panel) this.panel = new ForestPanel({ forest: this });
       this.panel.show();
     }
 
-    blur() {
-      // ...
-    }
-
-    get template() {
-      return `
-        <div>
-          <input ref="input" type="input" placeholder="{placeholder}" on-focus="{focus}" on-blur="{blur}" readonly="readonly" />
-        </div>
-      `;
+    toggle(id) {
+      if (this.value.includes(id)) {
+        this.value = this.value.filter(i => i !== id);
+      } else {
+        this.value = this.value.concat(id);
+      }
     }
 
     set value(value = this.defaultValue) {
       if (!(value instanceof Array)) value = [];
       this.$hasValue = true;
       this.$value = value;
-      this.input.value = value.map(id => this.indexForId[id].text).join(' / ');
+      this.selectedList.update();
+      this.panel.update();
       delete this.fullValue;
-      if (this.panel) this.panel.update();
     }
 
     get value() { return this.$value; }
@@ -307,31 +455,6 @@
           overflow: hidden;
           font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, SimSun, sans-serif;
           -webkit-font-smoothing: antialiased;
-          > input {
-            border-radius: 4px;
-            box-sizing: border-box;
-            height: 36px;
-            width: 222px;
-            padding: 3px 10px;
-            border: 1px solid #bfcbd9;
-            transition: border-color .2s cubic-bezier(.645,.045,.355,1);
-            &:hover {
-              border-color: #8391a5;
-            }
-            &:focus {
-              outline: none;
-              border-color: #20a0ff;
-            }
-            &[disabled] {
-              background-color: #eff2f7;
-              border-color: #d3dce6;
-              color: #bbb;
-              cursor: not-allowed;
-              &:hover {
-                border-color: #d3dce6;
-              }
-            }
-          }
         }
       `;
     }
@@ -340,10 +463,8 @@
 
   addEventListener('click', event => {
     let list = document.querySelectorAll('.' + PANEL_CLASS_NAME);
-    for (let i = 0; i < list.length; i++) {
-      list[i].jinkela.hideIfOut(event.target);
-    }
-  });
+    for (let i = 0; i < list.length; i++) list[i].jinkela.hideIfOut(event.target);
+  }, true);
 
   window.Forest = Forest;
 

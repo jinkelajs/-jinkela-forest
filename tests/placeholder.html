@@ -26,7 +26,7 @@ addEventListener('load', () => {
   }).to(document.body);
 
   // The placeholder attribute must be set on INPUT now
-  Tester.assert(forest.element.querySelector('input').getAttribute('placeholder') === 'placeholder');
+  Tester.assert(forest.element.firstElementChild.style.getPropertyValue('--placeholder') === JSON.stringify('placeholder'));
 
   Tester.feedback(true);
 
