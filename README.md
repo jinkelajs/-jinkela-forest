@@ -25,7 +25,7 @@ npm install jinkela-forest
 
 ```html
 <script src="https://unpkg.com/jinkela@1.2.19/umd.js"></script>
-<script src="https://unpkg.com/jinkela-forest@1.0.0/index.js"></script>
+<script src="index.js"></script>
 <script>
 addEventListener('DOMContentLoaded', () => {
 
