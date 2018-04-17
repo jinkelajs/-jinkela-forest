@@ -1,0 +1,59 @@
+<meta charset="utf-8" />
+<script src="/tester.js"></script>
+<script src="../node_modules/jinkela/umd.js"></script>
+<script src="../index.js"></script>
+<script>
+addEventListener('load', () => {
+
+  let forest = new Forest({
+    options: [
+      { id: 1, text: 'item 1' },
+      { id: 2, parentId: 1, text: 'item 2' },
+      { id: 3, parentId: 1, text: 'item 3' },
+      { id: 4, parentId: 2, text: 'item 4' },
+      { id: 5, parentId: 2, text: 'item 5' },
+      { id: 6, parentId: 3, text: 'item 6' },
+      { id: 7, parentId: 3, text: 'item 7' },
+      { id: 8, text: 'item 8' },
+      { id: 9, parentId: 8, text: 'item 9' },
+      { id: 10, parentId: 8, text: 'item 10' },
+      { id: 11, parentId: 9, text: 'item 11' },
+      { id: 12, parentId: 9, text: 'item 12' },
+      { id: 13, parentId: 10, text: 'item 13' },
+      { id: 14, parentId: 10, text: 'item 14' }
+    ],
+    maxLength: 1,
+    noRemovingAnimation: true
+  }).to(document.body);
+
+  // Focus
+  forest.element.firstChild.dispatchEvent(new Event('click'));
+  Tester.assert(document.querySelector('ul'));
+
+  // Select Item
+  document.querySelector('li').dispatchEvent(new Event('mouseenter'));
+  document.querySelector('ul:nth-child(2) > li').dispatchEvent(new Event('click', { bubbles: true }));
+  Tester.assert(forest.value.length === 1);
+  Tester.assert(forest.value[0] === 2);
+
+
+  // Click body to close panel
+  document.body.click();
+  Tester.assert(document.querySelector('ul') === null);
+
+  // Focus again
+  forest.element.firstChild.dispatchEvent(new Event('click'));
+  Tester.assert(document.querySelector('ul'));
+
+  // Select a sub-item
+  document.querySelector('li').dispatchEvent(new Event('mouseenter'));
+  document.querySelector('ul:nth-child(2) > li').dispatchEvent(new Event('mouseenter'));
+  document.querySelector('ul:nth-child(3) > li').dispatchEvent(new Event('mouseenter'));
+  document.querySelector('ul:nth-child(3) > li').dispatchEvent(new Event('click', { bubbles: true }));
+  Tester.assert(forest.value.length === 1);
+  Tester.assert(forest.value[0] === 4);
+
+  Tester.feedback(true);
+
+});
+</script>
