@@ -233,8 +233,13 @@
   class ForestSelectedItem extends Jinkela {
 
     remove() {
-      this.element.animate([ { transform: 'scale(1)' }, { transform: 'scale(.01)' } ], { duration: 200, easing: 'ease' })
-        .addEventListener('finish', () => this.element.remove());
+      if (this.noRemovingAnimation) {
+        this.element.remove();
+      } else {
+        this.element.animate([
+          { transform: 'scale(1)' }, { transform: 'scale(.01)' }
+        ], { duration: 200, easing: 'ease' }).addEventListener('finish', () => this.element.remove());
+      }
     }
 
     dispatchRemoveEvent() {
@@ -327,13 +332,14 @@
     }
 
     update() {
+      let { noRemovingAnimation } = this.forest;
       let data = this.forest.value.map(id => this.forest.indexForId[id]).filter(Boolean);
       let { list } = this;
       for (let i = 0; i < data.length; i++) {
         if (list[i]) {
           if (list[i].id !== data[i].id) list.splice(i--, 1).forEach(item => item.remove());
         } else {
-          list.push(new ForestSelectedItem(data[i]).to(this));
+          list.push(new ForestSelectedItem(data[i], { noRemovingAnimation }).to(this));
         }
       }
       list.splice(data.length).forEach(item => item.remove());
@@ -425,8 +431,8 @@
     }
 
     set value(value = this.defaultValue) {
-      if (this.maxLength) value = value.slice(-this.maxLength);
       if (!(value instanceof Array)) value = [];
+      if (this.maxLength) value = value.slice(-this.maxLength);
       this.$hasValue = true;
       this.$value = value;
       delete this.fullValue;
