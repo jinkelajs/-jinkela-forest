@@ -425,6 +425,7 @@
     }
 
     set value(value = this.defaultValue) {
+      if (this.maxLength) value = value.slice(-this.maxLength);
       if (!(value instanceof Array)) value = [];
       this.$hasValue = true;
       this.$value = value;
